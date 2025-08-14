@@ -1,15 +1,15 @@
 /**
  * Authentication Context
- * 
+ *
  * Provides authentication state and methods throughout the application.
  * Implements JWT-based authentication with secure storage and proper state management.
- * 
+ *
  * Features:
  * - User authentication state management
  * - Login/logout functionality
  * - Token persistence
  * - Role-based access control support
- * 
+ *
  * @author Senior Full-Stack Engineer
  * @version 1.0.0
  */
@@ -30,7 +30,7 @@ export const useAuth = () => {
 /**
  * Authentication Provider Component
  * Manages authentication state and provides methods to login, logout, etc.
- * 
+ *
  * @param {Object} props - Component props
  * @param {React.ReactNode} props.children - Child components
  */
@@ -42,10 +42,10 @@ const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
     const token = localStorage.getItem("token");
     const email = localStorage.getItem("email");
-    
+
     return token && email ? { email } : null;
   });
-  
+
   const [loading, setLoading] = useState(true);
 
   /**
@@ -56,12 +56,12 @@ const AuthProvider = ({ children }) => {
     const checkAuth = async () => {
       try {
         const token = localStorage.getItem("token");
-        
+
         if (token) {
           // In a real app, we would validate the token with the server
           // For this demo, we'll just check if it exists
           const email = localStorage.getItem("email");
-          
+
           if (email) {
             setUser({ email });
           } else {
@@ -77,7 +77,7 @@ const AuthProvider = ({ children }) => {
         setLoading(false);
       }
     };
-    
+
     checkAuth();
   }, []);
 
@@ -112,17 +112,47 @@ const AuthProvider = ({ children }) => {
    * Clears authentication data and resets state
    */
   const handleLogout = () => {
-    // Clear all auth-related data from localStorage
-    localStorage.removeItem("token");
-    localStorage.removeItem("userRole");
-    localStorage.removeItem("userId");
-    localStorage.removeItem("email");
-    
-    // Reset user state
-    setUser(null);
-    
-    // In a real app, we might also invalidate the token on the server
-    console.log("User logged out");
+    try {
+      // Capture existing session details before clearing
+      const token = localStorage.getItem("token");
+      const userId = localStorage.getItem("userId");
+      const email = localStorage.getItem("email");
+
+      // Update latest login log with logoutTime
+      if (userId || email) {
+        const logs = JSON.parse(localStorage.getItem("userLogs") || "[]");
+        // Find the most recent log for this user without a logoutTime
+        for (let i = logs.length - 1; i >= 0; i -= 1) {
+          const log = logs[i];
+          if (
+            (log.userId === userId || log.username === email) &&
+            !log.logoutTime
+          ) {
+            log.logoutTime = new Date().toISOString();
+            // Optionally keep tokenName reference if available
+            if (token && !log.tokenName) {
+              log.tokenName = `${String(token).substring(0, 10)}...`;
+            }
+            break;
+          }
+        }
+        localStorage.setItem("userLogs", JSON.stringify(logs));
+      }
+    } catch (e) {
+      console.error("Failed to record logout time:", e);
+    } finally {
+      // Clear all auth-related data from localStorage
+      localStorage.removeItem("token");
+      localStorage.removeItem("userRole");
+      localStorage.removeItem("userId");
+      localStorage.removeItem("email");
+
+      // Reset user state
+      setUser(null);
+
+      // In a real app, we might also invalidate the token on the server
+      console.log("User logged out");
+    }
   };
 
   /**
