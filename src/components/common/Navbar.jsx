@@ -8,21 +8,33 @@ const Navbar = () => {
   const { logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const hideProfileRoutes = ["/", "/login", "/signup"];
+  const hideProfileRoutes = [
+    "/",
+    "/login",
+    "/signup",
+    "/forgot-password",
+    "/reset-password",
+  ];
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [taskListOpen, setTaskListOpen] = useState(false);
   const dropdownRef = useRef(null);
   const taskListRef = useRef(null);
-  const [profile, setProfile] = useState({ name: "User", profilePic: "", role: "user" });
+  const [profile, setProfile] = useState({
+    name: "User",
+    profilePic: "",
+    role: "user",
+  });
 
   useEffect(() => {
     // Check if user is in admin or user portal
     const isAdminPortal = location.pathname.startsWith("/admin");
 
     // Load correct profile from localStorage
-    const storedProfile = JSON.parse(localStorage.getItem(isAdminPortal ? "adminProfile" : "userProfile"));
-    
+    const storedProfile = JSON.parse(
+      localStorage.getItem(isAdminPortal ? "adminProfile" : "userProfile")
+    );
+
     if (storedProfile) {
       setProfile({
         name: storedProfile.name || "User",
@@ -42,7 +54,7 @@ const Navbar = () => {
         setTaskListOpen(false);
       }
     }
-    
+
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
@@ -85,6 +97,8 @@ const Navbar = () => {
     }, 500);
   };
 
+  const isAuthenticated = !!localStorage.getItem("token");
+
   return (
     <nav className="bg-blue-600 text-white px-5 py-4 flex justify-between items-center shadow-lg">
       {/* Logo with Image & Text */}
@@ -93,13 +107,17 @@ const Navbar = () => {
         onClick={handleLogoClick}
         className="flex items-center text-3xl font-bold tracking-wide hover:opacity-70 transition"
       >
-        <img src="/app_icon.png" alt="TaskFlow Logo" className="w-12 h-12 rounded-full mr-2" />
+        <img
+          src="/app_icon.png"
+          alt="TaskFlow Logo"
+          className="w-12 h-12 rounded-full mr-2"
+        />
         TaskFlow
       </Link>
 
       <div className="flex items-center gap-4">
-        {/* Task List Button (Hidden on Landing/Login/Signup) */}
-        {!hideProfileRoutes.includes(location.pathname) && (
+        {/* Task List Button (hide when logged out) */}
+        {isAuthenticated && !hideProfileRoutes.includes(location.pathname) && (
           <div className="relative" ref={taskListRef}>
             <button
               onClick={() => setTaskListOpen(!taskListOpen)}
@@ -119,8 +137,8 @@ const Navbar = () => {
           </div>
         )}
 
-        {/* Profile Button (Hidden on Landing/Login/Signup) */}
-        {!hideProfileRoutes.includes(location.pathname) && (
+        {/* Profile Button (hide when logged out) */}
+        {isAuthenticated && !hideProfileRoutes.includes(location.pathname) && (
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setDropdownOpen(!dropdownOpen)}
@@ -145,7 +163,11 @@ const Navbar = () => {
                 <ul className="text-gray-700">
                   <li>
                     <Link
-                      to={profile.role === "admin" ? "/admin/profile" : "/user/profile"}
+                      to={
+                        profile.role === "admin"
+                          ? "/admin/profile"
+                          : "/user/profile"
+                      }
                       className="block px-4 py-2 hover:bg-gray-200 transition"
                       onClick={() => setDropdownOpen(false)}
                     >
@@ -164,6 +186,16 @@ const Navbar = () => {
               </div>
             )}
           </div>
+        )}
+
+        {/* Minimal Dashboard access when logged out */}
+        {!isAuthenticated && (
+          <button
+            onClick={() => navigate("/login")}
+            className="bg-white text-blue-600 font-medium px-4 py-2 rounded-lg shadow-md hover:bg-blue-700 hover:text-white transition-all"
+          >
+            Dashboard
+          </button>
         )}
       </div>
     </nav>
